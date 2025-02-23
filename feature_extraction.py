@@ -9,6 +9,24 @@ from skimage.transform import resize
 
 # TODO: Create feature processing functions for SIFT and HOG
 
+def calculate_grad_norms(image, sigma=1.6):
+    dx = np.array([[-1, 0, 1],
+                   [-2, 0, 2],
+                   [-1, 0, 1]], dtype=np.float32)
+
+    dy = np.array([[-1, -2, -1],
+                   [0, 0, 0],
+                   [1, 2, 1]], dtype=np.float32)
+
+    image_gaussian = filters.gaussian(image, sigma=sigma)
+    img_dx = ndi.correlate(image_gaussian, dx)
+    img_dy = ndi.correlate(image_gaussian, dy)
+    grad_norms = np.sqrt(img_dx ** 2 + img_dy ** 2)
+    angle_img = np.arctan2(img_dy, img_dx)
+
+    return grad_norms, angle_img
+
+
 def process_images(images):
     features_list = []
 

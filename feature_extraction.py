@@ -1,5 +1,3 @@
-from lib2to3.pgen2.tokenize import group
-
 import numpy as np
 import scipy.ndimage as ndi
 from skimage import filters
@@ -35,16 +33,18 @@ def create_hog(angles, grad_norms, center, window_size=16):
             cell_norms = window_norms[i * grid_size:i * grid_size + grid_size,
                          j * grid_size:j * grid_size + grid_size]
 
-            hist, _ = np.histogram(cell_angles, bins=9, weights=cell_norms)
+            hist, _ = np.histogram(cell_angles, bins=9, range=(0, np.pi), weights=cell_norms)
             hog_vector = np.append(hog_vector, hist)
 
 
-    # Normalization
-    hog_vector = hog_vector / np.linalg.norm(hog_vector)
-    hog_vector[hog_vector > 0.2] = 0.2
+    norm = np.linalg.norm(hog_vector)
+    if norm != 0:
+        hog_vector = hog_vector / norm
+        hog_vector[hog_vector > 0.2] = 0.2
+        norm = np.linalg.norm(hog_vector)
+        hog_vector = hog_vector / norm if norm != 0 else hog_vector
 
-    return hog_vector / np.linalg.norm(hog_vector)
-
+    return hog_vector
 
 def calculate_grad_norms(image, sigma=1.6):
     dx = np.array([[-1, 0, 1],
@@ -78,7 +78,6 @@ def process_images(images):
 
         resized_image = resize(gray_image, (new_h, new_w))
 
-        # TODO: Call HOG
         grad_norms, angles = calculate_grad_norms(resized_image)
 
         # Extract features for multiple window positions

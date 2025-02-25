@@ -1,125 +1,188 @@
+# Amogh Modgekar Desai - 1002060753
+# Used chatgpt and GitHub copilot to complete this assignment.
+import cv2
 import numpy as np
+import math
+import PIL.Image as Image
+
+import matplotlib.pyplot as plt
 import scipy.ndimage as ndi
-from skimage import filters
-from skimage.color import rgb2gray
-from skimage.transform import resize
-from skimage.feature import SIFT
+from matplotlib.patches import ConnectionPatch
+
+from skimage import io, filters, feature
+from skimage.transform import AffineTransform, resize
+from skimage.measure import ransac
+from skimage.color import rgb2gray, rgba2rgb
+from skimage.feature import match_descriptors, SIFT
+from sklearn.cluster import KMeans
+from tqdm import tqdm
+from skimage.feature import hog
 
 
+from sift_matching import convert_keypoints, plot_key_points, match_sift_descriptors, extract_sift_features
 
-# TODO: Create feature processing functions for SIFT and HOG
+def computer_histogram\
+                (descriptors, kmeans, vocab_size):
+    # If the descriptor is 1D (i.e., a single descriptor), reshape it to 2D.
+    if descriptors.ndim == 1:
+        descriptors = descriptors.reshape(1, -1)
+    labels = kmeans.predict(descriptors)
+    hist, _ = np.histogram(labels, bins=np.arange(vocab_size + 1))
+    return hist
 
-def match_sift_descriptors(desc1, desc2, ratio_threshold=0.75):
-    matches = []
-    for i, d1 in enumerate(desc1):
-        distances = np.linalg.norm(desc2 - d1, axis=1)
-        sorted_idx = np.argsort(distances)
-        # Ensure there are at least two descriptors to compare
-        if len(distances) > 1 and distances[sorted_idx[0]] < ratio_threshold * distances[sorted_idx[1]]:
-            matches.append((i, sorted_idx[0]))
-    return matches
-
-
-def create_hog(angles, grad_norms, center, window_size=16):
-    # Create HOG vector for a given window
-    window_half = int(window_size / 2)
-    window_angles = angles[center[0] - window_half:center[0] + window_half,
-                    center[1] - window_half:center[1] + window_half]
-    window_norms = grad_norms[center[0] - window_half:center[0] + window_half,
-                   center[1] - window_half:center[1] + window_half]
-
-    # Normalize angles
-    window_angles[window_angles < 0] += np.pi
-
-
-    # Remove NaN values
-    window_angles = np.nan_to_num(window_angles)
-    window_norms = np.nan_to_num(window_norms)
-
-    grid_size = window_half
-    hog_vector = np.array([])
-
-    for i in range(2):
-        for j in range(2):
-            cell_angles = window_angles[i * grid_size:i * grid_size + grid_size,
-                          j * grid_size:j * grid_size + grid_size]
-            cell_norms = window_norms[i * grid_size:i * grid_size + grid_size,
-                         j * grid_size:j * grid_size + grid_size]
-
-            hist, _ = np.histogram(cell_angles, bins=9, range=(0, np.pi), weights=cell_norms)
-            hog_vector = np.append(hog_vector, hist)
-
-
-    norm = np.linalg.norm(hog_vector)
-    if norm != 0:
-        hog_vector = hog_vector / norm
-        hog_vector[hog_vector > 0.2] = 0.2
-        norm = np.linalg.norm(hog_vector)
-        hog_vector = hog_vector / norm if norm != 0 else hog_vector
-
-    return hog_vector
-
-def calculate_grad_norms(image, sigma=1.6):
-    dx = np.array([[-1, 0, 1],
-                   [-2, 0, 2],
-                   [-1, 0, 1]], dtype=np.float32)
-
-    dy = np.array([[-1, -2, -1],
-                   [0, 0, 0],
-                   [1, 2, 1]], dtype=np.float32)
-
-    image_gaussian = filters.gaussian(image, sigma=sigma)
-    img_dx = ndi.correlate(image_gaussian, dx)
-    img_dy = ndi.correlate(image_gaussian, dy)
-    grad_norms = np.sqrt(img_dx ** 2 + img_dy ** 2)
-    angle_img = np.arctan2(img_dy, img_dx)
-
-    return grad_norms, angle_img
+def extract_hog_features(images, pixels_per_cell=(8, 8), cells_per_block=(2, 2), orientations=9):
+    """Extract HOG features from images."""
+    hog_features = []
+    for img in tqdm(images, desc="Extracting HOG features"):
+        features = hog(img, orientations=orientations, pixels_per_cell=pixels_per_cell,
+                       cells_per_block=cells_per_block, feature_vector=True)
+        hog_features.append(features)
+    return np.array(hog_features)
 
 
 def process_images(images):
-    features_list = []
+    images = images.reshape(-1, 3, 32, 32).transpose(0, 2, 3, 1).astype(np.uint8)
+    images_gray = np.array([rgb2gray(image) for image in images])
+    return images_gray
 
-    for x in images:
-        image_arr = np.asarray(x).reshape((32, 32, 3))
-        gray_image = rgb2gray(image_arr)
-        sift = SIFT()
-        sift.detect_and_extract(gray_image)
-        keypoints1 = sift.keypoints
-        descriptors1 = sift.descriptors
-
-        h, w = gray_image.shape
-        ratio = w / h
-        new_h = 300
-        new_w = int(new_h * ratio)
-
-        resized_image = resize(gray_image, (new_h, new_w))
-
-        grad_norms, angles = calculate_grad_norms(resized_image)
-
-        # Extract features for multiple window positions
-        for i in range(0, resized_image.shape[0] - 16, 16):
-            for j in range(0, resized_image.shape[1] - 16, 16):
-                features = create_hog(angles, grad_norms, (i + 8, j + 8))
-                features_list.append(features)
-
-    return np.array(features_list)
-
+def descriptors_to_histogram(desc_list, kmeans_model):
+    vocab_size = kmeans_model.n_clusters
+    hist_list = []
+    for desc in desc_list:
+        cluster_labels = kmeans_model.predict(desc)
+        # count occurrences of each cluster
+        hist, _ = np.histogram(cluster_labels, bins=range(vocab_size+1))
+        hist_list.append(hist)
+    return np.array(hist_list)
 
 if __name__ == "__main__":
-    # Load the pre-split data
+    # Load the pre-split CIFAR-10 data
     data = np.load("cifar10.npz", allow_pickle=True)
-
-    # Extract features from the training data
     X_train = data["X_train"].astype(np.uint8)
     y_train = data["y_train"]
     X_test = data["X_test"]
     y_test = data["y_test"]
 
-    # Extract features from the testing data
-    train_features = process_images(X_train)
-    test_features = process_images(X_test)
 
-    # Save the extracted features to a file
-    np.savez("features_hog.npz", X_train_features=train_features, y_train=y_train,
-             X_test_features=test_features, y_test=y_test)
+    X_train = process_images(X_train)
+    X_test = process_images(X_test)
+
+    # Visualize the first 10 images
+    fig, axes = plt.subplots(1, 10, figsize=(10, 1))
+    for i, ax in enumerate(axes):
+        ax.imshow(X_train[i], cmap='gray')
+        ax.axis('off')
+    plt.show()
+    # Visualize the first 10 images
+    fig, axes = plt.subplots(1, 10, figsize=(10, 1))
+    for i, ax in enumerate(axes):
+        ax.imshow(X_test[i], cmap='gray')
+        ax.axis('off')
+    plt.show()
+
+
+    # Instantiate SIFT
+    sift = SIFT()
+
+    # Lists to store descriptors and labels for training set
+    sift_features_train = []
+    y_sift_features_train = []
+
+    total_features = 0
+    # Extract SIFT features from training images
+    for idx in tqdm(range(X_train.shape[0]), desc="Extracting SIFT from Train"):
+        try:
+            # Detect and extract SIFT features
+            sift.detect_and_extract(X_train[idx])
+            num_features = sift.descriptors.shape[0]
+            total_features += num_features
+            # If descriptors were extracted successfully, store them and the label
+            if sift.descriptors is not None:
+                sift_features_train.append(sift.descriptors)
+                y_sift_features_train.append(y_train[idx])
+        except Exception as e:
+            pass
+
+    print(f"Total SIFT - TRAIN features extracted: {total_features}")
+
+    # Convert the list of SIFT features to a numpy array
+    sift_features_train_np = np.concatenate(sift_features_train)
+
+    # Create a KMeans model to cluster the SIFT features
+    vocab_size = 100
+    kmeans = KMeans(n_clusters=vocab_size, random_state=42)
+
+    # Fit the KMeans model to the SIFT features
+    kmeans.fit(sift_features_train_np)
+
+    X_train_sift = descriptors_to_histogram(sift_features_train, kmeans)
+
+    # sift = SIFT()
+
+    # Similarly, extract SIFT features from the test set
+    sift_features_test = []
+    y_sift_features_test = []
+
+    sift2 = SIFT()
+    print(f"Processing {X_test.shape[0]} images...")
+
+    total_features = 0
+    for idx in tqdm(range(X_test.shape[0]), desc="Extracting SIFT from Test"):
+        try:
+            sift2.detect_and_extract(X_test[idx])
+            num_features = sift.descriptors.shape[0]
+            total_features += num_features
+            if sift2.descriptors is not None:
+                sift_features_test.append(sift2.descriptors)
+                y_sift_features_test.append(y_test[idx])
+        except Exception as e:
+            pass
+
+    print(f"Total SIFT - TEST features extracted: {total_features}")
+
+    X_test_sift = descriptors_to_histogram(sift_features_test, kmeans)
+
+    y_train_sift = np.array(y_sift_features_train)
+    y_test_sift = np.array(y_sift_features_test)
+
+    np.savez(
+        "sift_features.npz",
+        X_train=X_train_sift,
+        y_train=y_train_sift,
+        X_test=X_test_sift,
+        y_test=y_test_sift
+    )
+    print("SIFT features (Bag of Visual Words) saved to sift_features.npz!")
+
+    # Extract HOG features
+    X_train_hog = extract_hog_features(X_train)
+    X_test_hog = extract_hog_features(X_test)
+
+
+    # Create a KMeans model to cluster the HOG features
+    vocab_size = 100  # Adjust the number of clusters as needed
+    kmeans = KMeans(n_clusters=vocab_size, random_state=42)
+    kmeans.fit(X_train_hog)
+    #
+    # # Convert HOG features into bag-of-words histograms
+    # Assuming extract_hog_features returns a list of arrays,
+    # where each array contains the HOG descriptors for one image:
+    X_train_hog_hist = np.array([computer_histogram
+                                 (desc, kmeans, vocab_size) for desc in X_train_hog])
+    X_test_hog_hist = np.array([computer_histogram
+                                (desc, kmeans, vocab_size) for desc in X_test_hog])
+
+
+    print("Number of HOG features TRAIN", X_train_hog.shape[1] * X_train_hog.shape[0])
+    print("Number of HOG features TEST:", X_test_hog.shape[1] * X_test_hog.shape[0])
+
+    # Save the extracted features
+    np.savez(
+        "hog_features.npz",
+        X_train=X_train_hog_hist,
+        y_train=y_train,
+        X_test=X_test_hog_hist,
+        y_test=y_test
+    )
+    print("HOG features (Bag of Visual Words) saved to hog_features.npz!")
+

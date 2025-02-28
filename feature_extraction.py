@@ -1,27 +1,26 @@
 # Amogh Modgekar Desai - 1002060753
 # Used chatgpt and GitHub copilot to complete this assignment.
-import cv2
-import numpy as np
 import math
-import PIL.Image as Image
 
+import PIL.Image as Image
+import cv2
 import matplotlib.pyplot as plt
+import numpy as np
 import scipy.ndimage as ndi
 from matplotlib.patches import ConnectionPatch
-
 from skimage import io, filters, feature
-from skimage.transform import AffineTransform, resize
-from skimage.measure import ransac
 from skimage.color import rgb2gray, rgba2rgb
+from skimage.feature import hog
 from skimage.feature import match_descriptors, SIFT
+from skimage.measure import ransac
+from skimage.transform import AffineTransform, resize
 from sklearn.cluster import KMeans
 from tqdm import tqdm
-from skimage.feature import hog
-
 
 from sift_matching import convert_keypoints, plot_key_points, match_sift_descriptors, extract_sift_features
 
-def computer_histogram\
+
+def computer_histogram \
                 (descriptors, kmeans, vocab_size):
     # If the descriptor is 1D (i.e., a single descriptor), reshape it to 2D.
     if descriptors.ndim == 1:
@@ -29,6 +28,7 @@ def computer_histogram\
     labels = kmeans.predict(descriptors)
     hist, _ = np.histogram(labels, bins=np.arange(vocab_size + 1))
     return hist
+
 
 def extract_hog_features(images, pixels_per_cell=(8, 8), cells_per_block=(2, 2), orientations=9):
     """Extract HOG features from images."""
@@ -45,15 +45,17 @@ def process_images(images):
     images_gray = np.array([rgb2gray(image) for image in images])
     return images_gray
 
+
 def descriptors_to_histogram(desc_list, kmeans_model):
     vocab_size = kmeans_model.n_clusters
     hist_list = []
     for desc in desc_list:
         cluster_labels = kmeans_model.predict(desc)
         # count occurrences of each cluster
-        hist, _ = np.histogram(cluster_labels, bins=range(vocab_size+1))
+        hist, _ = np.histogram(cluster_labels, bins=range(vocab_size + 1))
         hist_list.append(hist)
     return np.array(hist_list)
+
 
 if __name__ == "__main__":
     # Load the pre-split CIFAR-10 data
@@ -63,24 +65,22 @@ if __name__ == "__main__":
     X_test = data["X_test"]
     y_test = data["y_test"]
 
-
     X_train = process_images(X_train)
     X_test = process_images(X_test)
-
-    # Visualize the first 10 images
-    fig, axes = plt.subplots(1, 10, figsize=(10, 1))
-    for i, ax in enumerate(axes):
-        ax.imshow(X_train[i], cmap='gray')
-        ax.axis('off')
-    plt.show()
-    # Visualize the first 10 images
-    fig, axes = plt.subplots(1, 10, figsize=(10, 1))
-    for i, ax in enumerate(axes):
-        ax.imshow(X_test[i], cmap='gray')
-        ax.axis('off')
-    plt.show()
-
-
+    #
+    # # Visualize the first 10 images
+    # fig, axes = plt.subplots(1, 10, figsize=(10, 1))
+    # for i, ax in enumerate(axes):
+    #     ax.imshow(X_train[i], cmap='gray')
+    #     ax.axis('off')
+    # plt.show()
+    # # Visualize the first 10 images
+    # fig, axes = plt.subplots(1, 10, figsize=(10, 1))
+    # for i, ax in enumerate(axes):
+    #     ax.imshow(X_test[i], cmap='gray')
+    #     ax.axis('off')
+    # plt.show()
+    #
     # Instantiate SIFT
     sift = SIFT()
 
@@ -158,20 +158,19 @@ if __name__ == "__main__":
     X_train_hog = extract_hog_features(X_train)
     X_test_hog = extract_hog_features(X_test)
 
-
+    # print(X_train_hog.shape)
     # Create a KMeans model to cluster the HOG features
-    vocab_size = 100  # Adjust the number of clusters as needed
-    kmeans = KMeans(n_clusters=vocab_size, random_state=42)
-    kmeans.fit(X_train_hog)
-    #
-    # # Convert HOG features into bag-of-words histograms
-    # Assuming extract_hog_features returns a list of arrays,
-    # where each array contains the HOG descriptors for one image:
-    X_train_hog_hist = np.array([computer_histogram
-                                 (desc, kmeans, vocab_size) for desc in X_train_hog])
-    X_test_hog_hist = np.array([computer_histogram
-                                (desc, kmeans, vocab_size) for desc in X_test_hog])
-
+    # vocab_size = 100  # Adjust the number of clusters as needed
+    # kmeans = KMeans(n_clusters=vocab_size, random_state=42)
+    # kmeans.fit(X_train_hog)
+    # # #
+    # # # # Convert HOG features into bag-of-words histograms
+    # # # Assuming extract_hog_features returns a list of arrays,
+    # # # where each array contains the HOG descriptors for one image:
+    # # X_train_hog_hist = np.array([computer_histogram
+    # #                              (desc, kmeans, vocab_size) for desc in X_train_hog])
+    # # X_test_hog_hist = np.array([computer_histogram
+    # #                             (desc, kmeans, vocab_size) for desc in X_test_hog])
 
     print("Number of HOG features TRAIN", X_train_hog.shape[1] * X_train_hog.shape[0])
     print("Number of HOG features TEST:", X_test_hog.shape[1] * X_test_hog.shape[0])
@@ -179,10 +178,9 @@ if __name__ == "__main__":
     # Save the extracted features
     np.savez(
         "hog_features.npz",
-        X_train=X_train_hog_hist,
+        X_train=X_train_hog,
         y_train=y_train,
-        X_test=X_test_hog_hist,
+        X_test=X_test_hog,
         y_test=y_test
     )
     print("HOG features (Bag of Visual Words) saved to hog_features.npz!")
-

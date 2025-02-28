@@ -1,23 +1,12 @@
 # Amogh Modgekar Desai - 1002060753
 # Used chatgpt and GitHub copilot to complete this assignment.
-import math
 
-import PIL.Image as Image
-import cv2
-import matplotlib.pyplot as plt
 import numpy as np
-import scipy.ndimage as ndi
-from matplotlib.patches import ConnectionPatch
-from skimage import io, filters, feature
-from skimage.color import rgb2gray, rgba2rgb
+from skimage.color import rgb2gray
+from skimage.feature import SIFT
 from skimage.feature import hog
-from skimage.feature import match_descriptors, SIFT
-from skimage.measure import ransac
-from skimage.transform import AffineTransform, resize
 from sklearn.cluster import KMeans
 from tqdm import tqdm
-
-from sift_matching import convert_keypoints, plot_key_points, match_sift_descriptors, extract_sift_features
 
 
 def computer_histogram \

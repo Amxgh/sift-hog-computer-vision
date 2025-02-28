@@ -1,5 +1,14 @@
 # Assignment 2
 
+# Instructions to run
+
+1. Run feature_extraction.py to extract features from the training and test images.
+2. Run evaluate_hog.py to evaluate the HOG features.
+3. Run evaluate_sift.py to evaluate the SIFT features.
+
+The remaining files are attached because I was not sure about the deliverables. They can be ignored if they are not
+required.
+
 ## Requirements
 
 1. The number of features extracted from each approach are as follows:

@@ -1,6 +1,5 @@
-# Assignment 2
-
-# Instructions to run
+# Discussion
+## Instructions to run
 
 1. Run feature_extraction.py to extract features from the training and test images.
 2. Run evaluate_hog.py to evaluate the HOG features.

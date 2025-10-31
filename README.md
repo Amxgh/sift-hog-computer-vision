@@ -1,50 +1,155 @@
-This assignment covers keypoint matching and image stitching with SIFT and RANSAC.
+# SIFT & HOG Feature-Based Image Classification and Matching
 
-# Keypoint Detectors
+This project explores computer vision techniques for feature extraction and classification. It implements and evaluates two popular feature descriptors, "**SIFT (Scale-Invariant Feature Transform)**" and "**HOG (Histogram of Oriented Gradients)**".
 
-The first part of assignment 2 is all about keypoint detection. Being able to work with and evaluate a range of keypoint detectors is important for many computer vision tasks. To evaluate the efficacy of these detectors, you will evaluate them on the CIFAR-10 dataset.
+The project is divided into two main parts:
+1.  "**Image Classification**": Uses "HOG" features and "SIFT" features (with a "Bag of Visual Words" model) to train "Support Vector Machine (SVM)" classifiers on the "**CIFAR-10**" dataset.
+2.  "**Keypoint Matching**": Implements "SIFT" keypoint matching to find and visualize corresponding points between two images, enhanced with "**RANSAC**" for robust filtering.
 
-You will evaluate Histogram of Oriented Gradients and SIFT features both qualitatively and quantitatively. You are then tasked to use these features to train a simple classifier and evaluate the performance of each feature set on the CIFAR-10 dataset.
+---
 
-## Keypoint Matching of SIFT Features
+## 🚀 Features
 
-For qualitative evaluation, implement a keypoint matching function that takes in two sets of SIFT keypoints and returns a list of matching pairs. You will then use this function to plot the matches between two images.
+* "**HOG Feature Extraction**" for full-image classification.
+* "**SIFT Bag of Visual Words (BoVW)**" model using "K-Means" clustering for image classification.
+* "**SVM Classifier Training**" and evaluation for both "HOG" and "SIFT" features.
+* "**Custom SIFT Keypoint Matching**" function demonstrating "Lowe's ratio test".
+* "**RANSAC Integration**" (via "scikit-image") to filter matching outliers.
+* "**Visualization**" of keypoint matches and "RANSAC" inliers.
 
-Create a matching function that, given two sets of keypoint features, returns a list of indices of matching pairs. That is, pair $(i, j)$ in the list indicates a match between the feature at index $i$ in the source image with the feature at index $j$ in the second image.
+---
 
-**You should write the function yourself, but are encouraged to also verify your function with `match_descriptors` from `skimage.feature`.**
+## 📋 Requirements
 
-### Plot Keypoint Matches
+To run this project, you will need "Python 3" and the following libraries. You can install them using "pip":
 
-Create a plotting function that combines two input images of the same size side-by-side and plots the keypoints detected in each image. Additionally, plot lines between the keypoints showing which ones have been matched together. An example of this function is provided in `ransac.ipynb` in this same repository.
+```
+pip install numpy
+pip install scikit-learn
+pip install scikit-image
+pip install matplotlib
+pip install tqdm
+pip install opencv-python-headless
+```
 
-## Evaluating Keypoint Detectors
+Or, you can install them all at once by creating a "requirements.txt" file with the following content and running "pip install -r requirements.txt":
 
-To test the efficacy of both HOG and SIFT, you will train two simple classifiers on the CIFAR-10 dataset, one with HOG features and one with SIFT features. You will then evaluate the performance of these classifiers on the test set.
+```
+numpy
+scikit-learn
+scikit-image
+matplotlib
+tqdm
+opencv-python-headless
+```
 
-### Bag of Visual Words
+---
 
-To train a classifier using SIFT or HOG features, you will first need to create a bag of visual words. This is a set of representative features that will be used to train the classifier. You will then use the bag of visual words to create a histogram of visual words for each image in the dataset. This histogram will be used as the feature vector for each image. Feel free to use the demo code that was presented in class to help you with this part of the assignment.
+## 🏃‍♂️ How to Run
 
-**Before moving to the next part, make sure you have run `load_and_split.py` to download the CIFAR-10 dataset and split it into training and testing sets.**
+The project is split into two parts.
 
-In a Python script named `feature_extraction.py`, implement functions to create a bag of visual words using both SIFT and HOG features. In the `main` part of the file, take the data that is loaded by `numpy` and process the training and testing data. After converting them to the fixed length feature vectors, save them to a file. Each file should store a dictionary object containing `X_train`, `y_train`, `X_test`, and `y_test`. You will use these files in the next part of the assignment. You should have two files, one for HOG and one for SIFT.
+### Part 1: Image Classification (HOG & SIFT on CIFAR-10)
 
-### Classification with Support Vector Machines
+This part will download the "CIFAR-10" dataset, extract features, and train classifiers to evaluate their accuracy.
 
-For classification, create two files `evaluate_hog.py` and `evaluate_sift.py` that train a support vector machine (SVM) using the HOG and SIFT features, respectively. You can use the `sklearn` library to train the SVM as shown in the example code. You should use the default parameters for the SVM. 
+**1. Download and Split Data**
+First, run the "load_and_split.py" script. This will fetch the "CIFAR-10" dataset from "OpenML" and save it as "cifar10.npz".
 
-Once they are trained, evaluate the performance of the classifiers on the test set. You should report the accuracy of the classifiers on the test set.
+`
+python load_and_split.py
+`
 
-## Requirements
+**2. Extract Features**
+Next, run the main feature extraction script. This will load "cifar10.npz", compute "HOG" and "SIFT (BoVW)" features for the training and test sets, and save the results into two new files: "hog_features.npz" and "sift_features.npz".
 
-Your final implementation should include any necessary comments and be easy to follow and interpret. You can use either a notebook or a Python script. Whatever you choose, there should be a separate file for each feature detector. In a separate document, write a brief summary that includes:
+`
+python feature_extraction.py
+`
 
-1. the number of features extracted using each approach
-2. the number of correct matches found
-3. the accuracy of the classifiers when evaluated on the test set
+**3. Evaluate Classifiers**
+Finally, run the evaluation scripts. Each script will load its corresponding ".npz" feature file, train a "Linear SVM", and print the final classification accuracy on the test set.
 
-# Questions
+* **To evaluate HOG:**
+    `
+    python evaluate_hog.py
+    `
 
-1. Describe a process for performing keypoint matching using HOG features. The challenge here is that HOG features are typically generated for the entire image.
-2. Give your own interpretation of the results. Why do you think one feature set performed better than the other? Consider the efficiency of the feature extraction process and the quality of the features themselves.
+* **To evaluate SIFT:**
+    `
+    python evaluate_sift.py
+    `
+
+### Part 2: Keypoint Matching (SIFT & RANSAC)
+
+This part demonstrates qualitative "SIFT" matching between two images.
+
+**1. Add Images**
+This script (`sift_matching.py`) expects two images named "**bobbie1.JPG**" and "**bobbie_template.JPG**" to be in the same directory. (You will need to provide these images yourself).
+
+**2. Run the Matching Script**
+Once the images are in place, simply run the script:
+
+`
+python sift_matching.py
+`
+
+This will open several "matplotlib" windows showing:
+* The keypoints detected in each image.
+* The raw keypoint matches found using the custom matching function.
+* The refined, robust matches (inliers) found after applying "RANSAC".
+
+---
+
+## 📂 Project File Structure
+
+* `load_and_split.py`: Downloads and prepares the "CIFAR-10" dataset into "cifar10.npz".
+* `feature_extraction.py`: Loads `cifar10.npz`, extracts "HOG" and "SIFT (BoVW)" features, and saves them to `hog_features.npz` and `sift_features.npz`.
+* `evaluate_hog.py`: Loads `hog_features.npz`, trains an "SVM", and reports accuracy.
+* `evaluate_sift.py`: Loads `sift_features.npz`, trains an "SVM", and reports accuracy.
+* `sift_matching.py`: Performs "SIFT" matching and "RANSAC" on two local images (`bobbie1.JPG`, `bobbie_template.JPG`).
+* `create_hog.py`: A helper file defining a function to create a "HOG" descriptor (note: the main pipeline in `feature_extraction.py` uses the `skimage.feature.hog` implementation).
+
+---
+
+## 📈 Results
+
+This summary outlines the performance of the "HOG" and "SIFT" feature sets on the "CIFAR-10" test data when classified with a "Linear SVM".
+
+### 1. Number of Features Extracted
+
+* **SIFT (Bag of Visual Words, vocab_size=100)**:
+    * TRAIN: "248,285" total raw descriptors (clustered into "100" visual words).
+    * TEST: "55,916" total raw descriptors.
+* **HOG (8x8 pixels/cell, 2x2 cells/block)**:
+    * TRAIN: "5,184,000" total feature dimensions ("10,000" images * "5184" features/image).
+    * TEST: "1,296,000" total feature dimensions ("4,000" images * "5184" features/image).
+
+### 2. Classifier Performance
+
+* **HOG**:
+    * Number of Correct Matches: "1,634"
+    * Total Test Samples: "4,000"
+    * **Accuracy: 40.85%**
+* **SIFT**:
+    * Number of Correct Matches: "1,087"
+    * Total Test Samples: "3,994" (Note: "6" test images failed "SIFT" extraction)
+    * **Accuracy: 27.22%**
+
+---
+
+## ❓ Discussion
+
+### Q1: Describe a process for performing keypoint matching using HOG features.
+
+"Histogram of Oriented Gradients (HOGs)" are normally computed on images as a whole rather than just on keypoints. However, we can still perform keypoint matching using "HOG" features by extracting "HOG" features from the keypoints themselves.
+
+So we can start by using "SIFT" to get keypoints. Then, instead of computing the "HOG" for the entire image, we can compute the "HOG" for a small region (e.g., a "16x16" or "32x32" pixel patch) around each keypoint. This local "HOG" descriptor can then be used as the feature vector for that keypoint. Once we have "HOG" descriptors for all keypoints in two images, we can use the same matching process as "SIFT" (e.g., nearest neighbor distance ratio) to find corresponding pairs. Then we can use "RANSAC" to filter out incorrect matches.
+
+### Q2: Give your own interpretation of the results. Why do you think one feature set performed better than the other?
+
+"HOG (40.85% accuracy)" performed significantly better than "SIFT (27.22% accuracy)" for the task of image classification on "CIFAR-10".
+
+"HOG" extracts a much larger number of features than "SIFT". This alone means that "HOG" will have a better accuracy than "SIFT". "HOG" works with the entire image rather than working on keypoints. This means that "HOG" has more material to go off of.
+
+"HOG" is also much faster than "SIFT" because it doesn't have to compute keypoints. "SIFT" is slow and less accurate because it has to compute keypoints. This would make "SIFT" more accurate for matching things (like in "sift_matching.py") rather than classifying things.

@@ -8,7 +8,7 @@ The project is divided into two main parts:
 
 ---
 
-## 🚀 Features
+## Features
 
 * "**HOG Feature Extraction**" for full-image classification.
 * "**SIFT Bag of Visual Words (BoVW)**" model using "K-Means" clustering for image classification.
@@ -19,7 +19,7 @@ The project is divided into two main parts:
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 To run this project, you will need "Python 3" and the following libraries. You can install them using "pip":
 
@@ -45,7 +45,7 @@ opencv-python-headless
 
 ---
 
-## 🏃‍♂️ How to Run
+## How to Run
 
 The project is split into two parts.
 
@@ -101,7 +101,7 @@ This will open several "matplotlib" windows showing:
 
 ---
 
-## 📂 Project File Structure
+## Project File Structure
 
 * `load_and_split.py`: Downloads and prepares the "CIFAR-10" dataset into "cifar10.npz".
 * `feature_extraction.py`: Loads `cifar10.npz`, extracts "HOG" and "SIFT (BoVW)" features, and saves them to `hog_features.npz` and `sift_features.npz`.
@@ -112,7 +112,7 @@ This will open several "matplotlib" windows showing:
 
 ---
 
-## 📈 Results
+## Results
 
 This summary outlines the performance of the "HOG" and "SIFT" feature sets on the "CIFAR-10" test data when classified with a "Linear SVM".
 
@@ -138,7 +138,7 @@ This summary outlines the performance of the "HOG" and "SIFT" feature sets on th
 
 ---
 
-## ❓ Discussion
+## Discussion
 
 ### Q1: Describe a process for performing keypoint matching using HOG features.
 
